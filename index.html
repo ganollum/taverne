@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- taverne-page v8 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
+<!-- taverne-page v10 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
 <title>Taverne des Héros · Classement</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🍺%3C/text%3E%3C/svg%3E">
 <meta name="description" content="Le classement des héros de la Taverne des Héros, les jeux du tchat de ganollum sur Twitch.">
@@ -124,13 +124,105 @@
   .palmares .mois span { color: var(--doux); }
   .palmares .mois span b { color: var(--texte); }
   @media (max-width: 640px) { .cache-mobile { display: none; } }
+  /* ❄🎄 THÈME D'HIVER ET DE NOËL (activé tout seul du 20 novembre au 6 janvier) */
+  body.noel {
+    background:
+      radial-gradient(ellipse at 50% -5%, rgba(255, 170, 70, 0.30), transparent 55%),
+      radial-gradient(ellipse at 15% 110%, rgba(120, 170, 255, 0.18), transparent 50%),
+      radial-gradient(ellipse at 85% 110%, rgba(120, 170, 255, 0.18), transparent 50%),
+      linear-gradient(180deg, #0b1630 0%, #13203d 40%, #1d1b2c 75%, #261a14 100%);
+    background-attachment: fixed;
+  }
+  #neige { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+  .page { position: relative; z-index: 2; }
+  .noel .guirlande { position: fixed; top: 0; left: 0; right: 0; height: 46px; z-index: 3; pointer-events: none; }
+  .noel .guirlande svg { width: 100%; height: 100%; }
+  .noel .ampoule { animation: briller 1.6s ease-in-out infinite; }
+  @keyframes briller { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .noel header { padding-top: 34px; }
+  .noel h1 { color: #fff4d6; text-shadow: 0 3px 0 #7a1f1f, 0 0 22px rgba(255, 255, 255, 0.35); }
+  .noel .sous { color: #c9d6ee; }
+  /* de la neige posée sur les cadres */
+  .noel .carte, .noel .bandeau, .noel .recherche input { position: relative; border-color: #8aa4c8; }
+  .noel .carte { background: rgba(16, 22, 40, 0.9); }
+  .noel .carte::before {
+    content: ''; position: absolute; left: 6px; right: 6px; top: -18px; height: 26px; pointer-events: none;
+    background:
+      radial-gradient(circle at 4% 75%, #fff 9px, transparent 9.5px),
+      radial-gradient(circle at 15% 55%, #fff 13px, transparent 13.5px),
+      radial-gradient(circle at 29% 70%, #fff 10px, transparent 10.5px),
+      radial-gradient(circle at 43% 50%, #fff 15px, transparent 15.5px),
+      radial-gradient(circle at 58% 68%, #fff 11px, transparent 11.5px),
+      radial-gradient(circle at 72% 52%, #fff 14px, transparent 14.5px),
+      radial-gradient(circle at 86% 66%, #fff 11px, transparent 11.5px),
+      radial-gradient(circle at 97% 72%, #fff 8px, transparent 8.5px),
+      linear-gradient(transparent 62%, #fff 62%);
+    border-radius: 0 0 10px 10px; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.3));
+  }
+  .noel nav button { background: #1c2742; border-color: #4b6a99; }
+  .noel nav button.actif { background: #c62a2a; border-color: #ffd6d6; color: #fff; box-shadow: 0 0 12px rgba(255, 80, 80, 0.5); }
+  .noel .select-classe button.actif { border-color: #fff; color: #fff; background: #1f7a3e; }
+  .noel .live { background: #1f7a3e; box-shadow: 0 3px 0 #0f4a24; }
+  .noel tr.cliquable:hover td { background: rgba(160, 200, 255, 0.08); }
+  .noel .bandeau { background: rgba(10, 18, 36, 0.6); border-color: rgba(200, 225, 255, 0.35); }
+  .noel .bandeau .eclair { color: #ff6b6b; }
+  /* un tapis de neige en bas de l'écran */
+  .noel .congere { position: fixed; left: 0; right: 0; bottom: -2px; height: 60px; z-index: 1; pointer-events: none;
+    background: radial-gradient(ellipse 55% 100% at 20% 100%, #f4f8ff 60%, transparent 61%),
+                radial-gradient(ellipse 50% 90% at 70% 100%, #eaf2ff 60%, transparent 61%),
+                radial-gradient(ellipse 40% 80% at 100% 100%, #f4f8ff 60%, transparent 61%);
+    opacity: 0.9; }
+  .noel footer { padding-bottom: 50px; }
+  .noel .voeux { display: block; margin-top: 8px; color: #ffd6d6; font-weight: 700; }
+  /* ❄ une couche de neige sur le haut des boutons, de la recherche, du bandeau et des petites cartes */
+  .noel nav button, .noel .live, .noel .recherche, .noel .bandeau, .noel .leader, .noel .classe, .noel .selecteur button { position: relative; }
+  .noel nav button::after, .noel .live::after, .noel .recherche::after, .noel .bandeau::after, .noel .leader::after, .noel .classe::after {
+    content: ''; position: absolute; left: 6%; right: 6%; top: -9px; height: 14px; pointer-events: none;
+    background:
+      radial-gradient(circle at 8% 70%, #fff 5px, transparent 5.5px),
+      radial-gradient(circle at 24% 55%, #fff 7px, transparent 7.5px),
+      radial-gradient(circle at 43% 65%, #fff 6px, transparent 6.5px),
+      radial-gradient(circle at 61% 50%, #fff 8px, transparent 8.5px),
+      radial-gradient(circle at 80% 62%, #fff 6px, transparent 6.5px),
+      radial-gradient(circle at 94% 72%, #fff 4px, transparent 4.5px),
+      linear-gradient(transparent 55%, #fff 55%);
+    border-radius: 0 0 6px 6px; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+  }
+  .noel .recherche::after { left: calc(50% - 210px); right: calc(50% - 210px); top: -5px; }
+  @media (max-width: 500px) { .noel .recherche::after { left: 12%; right: 12%; } }
+  /* 🍬 du rouge : bordures en sucre d'orge, cadres rouges */
+  .noel .carte { border: 4px solid transparent;
+    background: linear-gradient(#141c33, #141c33) padding-box,
+                repeating-linear-gradient(45deg, #d42a2a 0 12px, #fff 12px 24px) border-box; }
+  .noel .leader { border-color: #d44a4a; background: rgba(120, 20, 20, 0.22); }
+  .noel .leader small { color: #ffb3b3; }
+  .noel th { color: #ff9a9a; }
+  .noel nav button { border-color: #b33a3a; }
+  .noel .recherche input { border-color: #d44a4a; }
+  .noel .bandeau { border-color: #d44a4a; }
+  .noel h1 { text-shadow: 0 3px 0 #a01818, 0 6px 0 #5e0d0d, 0 0 26px rgba(255, 90, 90, 0.45); }
+  .noel .maj { color: #ffc9c9; }
+  /* 🎅 le bonnet du Père Noël sur le « T » du titre */
+  .t-chapeau { position: relative; display: inline-block; }
+  .t-chapeau svg { position: absolute; left: -0.18em; top: -0.55em; width: 0.95em; height: 0.75em; transform: rotate(-14deg); pointer-events: none; }
+  /* 🛷 le traîneau qui traverse le haut de la page de temps en temps */
+  .noel .traineau { position: fixed; top: 52px; left: 0; z-index: 4; pointer-events: none; font-size: 34px; white-space: nowrap;
+    animation: traineau 32s linear infinite; animation-delay: 4s; transform: translateX(-120vw); filter: drop-shadow(0 3px 4px rgba(0,0,0,.5)); }
+  .noel .traineau span { display: inline-block; transform: scaleX(-1); }
+  .noel .traineau b { font-size: 15px; color: #fff; background: #c62a2a; border-radius: 999px; padding: 3px 10px; vertical-align: top; margin-left: 6px; }
+  @keyframes traineau { 0% { transform: translate(110vw, 10px); } 40% { transform: translate(-60vw, -14px); } 100% { transform: translate(-60vw, -14px); } }
+  @media (prefers-reduced-motion: reduce) { .noel .ampoule { animation: none; } .noel .traineau { display: none; } }
   footer { text-align: center; color: var(--doux); font-size: 13px; margin-top: 30px; }
 </style>
 </head>
 <body>
+<canvas id="neige" hidden></canvas>
+<div class="guirlande" id="guirlande" hidden></div>
+<div class="congere" id="congere" hidden></div>
+<div class="traineau" id="traineau" hidden><b>Ho ho ho !</b> <span>🎅🛷🦌🦌🦌</span></div>
 <div class="page">
   <header>
-    <h1>🍺 Taverne des Héros 🍺</h1>
+    <h1><span class="deco">🍺</span> Taverne des Héros <span class="deco">🍺</span></h1>
     <div class="sous">Les héros du tchat de <b id="chaine">ganollum</b> : Bataille, Arène et Donjon</div>
     <a class="live" id="lienLive" href="https://www.twitch.tv/ganollum" target="_blank" rel="noopener">🎮 Rejoindre la Taverne en live</a>
     <div class="maj" id="maj">Chargement…</div>
@@ -360,6 +452,52 @@ async function charger() {
     afficherExploits();
   }
 }
+// ❄🎄 décor d'hiver : du 20 novembre au 6 janvier (ou ?noel=1 / ?noel=0 dans l'adresse pour forcer)
+(function hiver() {
+  const d = new Date(), m = d.getMonth() + 1, j = d.getDate();
+  const force = new URLSearchParams(location.search).get('noel');
+  const actif = force !== null ? force === '1' : (m === 11 && j >= 20) || m === 12 || (m === 1 && j <= 6);
+  if (!actif) return;
+  document.body.classList.add('noel');
+  const deco = document.querySelectorAll('h1 .deco');
+  if (deco[0]) deco[0].textContent = '🎄';
+  if (deco[1]) deco[1].textContent = '🎅';
+  // le bonnet sur le « T » de « Taverne »
+  const h1 = document.querySelector('h1');
+  h1.innerHTML = h1.innerHTML.replace(' Taverne', ' <span class="t-chapeau">T<svg viewBox="0 0 100 80"><path d="M8 70 C 25 35, 55 8, 92 18 C 80 30, 70 45, 66 70 Z" fill="#d42a2a"/>' +
+    '<circle cx="92" cy="18" r="10" fill="#fff"/><rect x="2" y="62" width="72" height="16" rx="8" fill="#fff"/></svg></span>averne');
+  const f = document.querySelector('footer');
+  if (f) f.insertAdjacentHTML('beforeend', '<span class="voeux">🎅 Joyeuses fêtes à tous les héros de la Taverne ! ❄</span>');
+  ['guirlande', 'congere', 'neige', 'traineau'].forEach(id => document.getElementById(id).hidden = false);
+  // guirlande : un fil qui ondule et des ampoules de couleur qui scintillent
+  const G = document.getElementById('guirlande'), n = 26, couleurs = ['#ff4d4d', '#ffd23f', '#4dd97a', '#5aa9ff', '#ff8ad8'];
+  let svg = '<svg viewBox="0 0 1000 46" preserveAspectRatio="none"><path d="M0 8 ';
+  for (let i = 1; i <= n; i++) svg += 'Q ' + ((i - 0.5) * 1000 / n) + ' 34 ' + (i * 1000 / n) + ' 8 ';
+  svg += '" stroke="#1e3a24" stroke-width="2.5" fill="none"/>';
+  for (let i = 0; i < n; i++) {
+    const x = (i + 0.5) * 1000 / n, c = couleurs[i % couleurs.length];
+    svg += '<g class="ampoule" style="animation-delay:' + ((i * 0.37) % 1.6).toFixed(2) + 's"><rect x="' + (x - 2.5) + '" y="18" width="5" height="5" fill="#2b2b2b"/>' +
+           '<ellipse cx="' + x + '" cy="29" rx="5" ry="8" fill="' + c + '"/><ellipse cx="' + x + '" cy="29" rx="11" ry="13" fill="' + c + '" opacity="0.25"/></g>';
+  }
+  G.innerHTML = svg + '</svg>';
+  // neige qui tombe (légère : une centaine de flocons)
+  const cv = document.getElementById('neige'), cx = cv.getContext('2d');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let W, H; const flocons = [];
+  const taille = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; };
+  taille(); addEventListener('resize', taille);
+  for (let i = 0; i < 110; i++) flocons.push({ x: Math.random() * W, y: Math.random() * H, r: 1 + Math.random() * 2.8, v: 0.4 + Math.random() * 1.1, o: Math.random() * 6.28 });
+  (function tomber(t) {
+    cx.clearRect(0, 0, W, H);
+    cx.fillStyle = 'rgba(255,255,255,0.85)';
+    for (const f of flocons) {
+      f.y += f.v; f.x += Math.sin(t / 1500 + f.o) * 0.4;
+      if (f.y > H + 5) { f.y = -5; f.x = Math.random() * W; }
+      cx.beginPath(); cx.arc(f.x, f.y, f.r, 0, 6.28); cx.fill();
+    }
+    requestAnimationFrame(tomber);
+  })(0);
+})();
 charger();
 setInterval(charger, 120000);   // se met à jour toute seule toutes les 2 minutes
 </script>
