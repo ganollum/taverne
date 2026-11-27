@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- taverne-page v1 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
+<title>Taverne des Héros · Classement</title>
+<meta name="description" content="Le classement des héros de la Taverne des Héros, les jeux du tchat de ganollum sur Twitch.">
+<style>
+  :root {
+    --bois: #2a1a10; --bois2: #3a2416; --carte: rgba(30, 18, 10, 0.92); --bord: #6b4424;
+    --or: #ffd23f; --texte: #f3e6d2; --doux: #b9a58c; --rouge: #ff6a6a; --vert: #7dff8a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--texte);
+    font: 16px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(255, 170, 60, 0.28), transparent 60%),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0 2px, transparent 2px 140px),
+      linear-gradient(180deg, #1c110a, #2a1a10 40%, #160d07);
+  }
+  a { color: var(--or); }
+  .page { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
+  header { text-align: center; padding: 18px 0 8px; }
+  h1 { margin: 0; font-size: clamp(32px, 6vw, 56px); color: var(--or); letter-spacing: 1px;
+       text-shadow: 0 3px 0 #6b3d12, 0 0 24px rgba(255, 190, 60, 0.35); }
+  .sous { color: var(--doux); margin: 6px 0 14px; }
+  .live { display: inline-block; padding: 9px 18px; border-radius: 999px; background: #9146ff; color: #fff;
+          text-decoration: none; font-weight: 700; box-shadow: 0 3px 0 #5a2ba8; }
+  .maj { color: var(--doux); font-size: 13px; margin-top: 10px; }
+  .recherche { display: flex; justify-content: center; margin: 22px 0 10px; }
+  .recherche input { width: min(460px, 100%); padding: 12px 18px; border-radius: 999px; border: 2px solid var(--bord);
+                     background: rgba(0,0,0,0.4); color: var(--texte); font-size: 17px; outline: none; }
+  .recherche input:focus { border-color: var(--or); }
+  nav { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 14px 0 20px; }
+  nav button { padding: 9px 16px; border-radius: 999px; border: 2px solid var(--bord); background: var(--bois2);
+               color: var(--texte); font-size: 15px; font-weight: 600; cursor: pointer; }
+  nav button.actif { background: var(--or); border-color: var(--or); color: #2a1a10; }
+  .carte { background: var(--carte); border: 2px solid var(--bord); border-radius: 18px; padding: 18px;
+           box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--doux); font-weight: 600; font-size: 13px; text-transform: uppercase; padding: 8px 10px; }
+  td { padding: 10px; border-top: 1px solid rgba(255,255,255,0.07); vertical-align: middle; }
+  tr.cliquable { cursor: pointer; }
+  tr.cliquable:hover td { background: rgba(255, 210, 63, 0.07); }
+  .rang { width: 46px; font-weight: 800; color: var(--doux); text-align: center; }
+  .rang.r1 { font-size: 22px; } .rang.r2 { font-size: 20px; } .rang.r3 { font-size: 19px; }
+  .nom { font-weight: 700; font-size: 17px; }
+  .classes-mini { color: var(--doux); font-size: 14px; }
+  .pastille { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+  .t0 { background: #5a4a3a; color: #e8d8c4; }
+  .t1 { background: #8a5528; color: #ffe2c4; }
+  .t2 { background: #9aa3ad; color: #1d2228; }
+  .t3 { background: #e6b422; color: #2a1a00; }
+  .t4 { background: linear-gradient(90deg, #ff7a00, #ffcf3f, #ff7a00); color: #2a1000; box-shadow: 0 0 12px rgba(255,160,40,0.7); }
+  .select-classe { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+  .select-classe button { padding: 7px 12px; border-radius: 12px; border: 2px solid var(--bord); background: var(--bois2);
+                          color: var(--texte); cursor: pointer; font-size: 14px; }
+  .select-classe button.actif { border-color: var(--or); color: var(--or); }
+  .honneur { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .honneur h3 { margin: 0 0 10px; color: var(--or); }
+  .honneur ol { margin: 0; padding-left: 0; list-style: none; }
+  .honneur li { display: flex; justify-content: space-between; padding: 7px 4px; border-top: 1px solid rgba(255,255,255,0.07); }
+  .honneur li b { cursor: pointer; }
+  .vide { text-align: center; color: var(--doux); padding: 30px; }
+  /* fiche d'un héros */
+  .fond-fiche { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: flex-start;
+                justify-content: center; padding: 30px 12px; overflow-y: auto; z-index: 10; }
+  .fond-fiche.ouvert { display: flex; }
+  .fiche { width: min(760px, 100%); position: relative; }
+  .fermer { position: absolute; right: 14px; top: 10px; background: none; border: 0; color: var(--doux); font-size: 30px; cursor: pointer; }
+  .fiche h2 { margin: 0; color: var(--or); font-size: 32px; }
+  .fiche .resume { color: var(--doux); margin: 4px 0 16px; }
+  .victoires { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .victoires span { background: rgba(0,0,0,0.35); border: 1px solid var(--bord); border-radius: 12px; padding: 6px 12px; }
+  .grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .classe { background: rgba(0,0,0,0.3); border: 2px solid var(--bord); border-radius: 14px; padding: 12px; }
+  .classe.jamais { opacity: 0.45; }
+  .classe .tete { display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  .classe .niv { font-size: 22px; color: var(--or); }
+  .barre { height: 8px; border-radius: 99px; background: rgba(255,255,255,0.1); overflow: hidden; margin: 8px 0 6px; }
+  .barre i { display: block; height: 100%; background: linear-gradient(90deg, #ffb300, #ffd23f); }
+  .classe small { color: var(--doux); }
+  .badges { margin-top: 14px; font-size: 22px; }
+  footer { text-align: center; color: var(--doux); font-size: 13px; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>🍺 Taverne des Héros 🍺</h1>
+    <div class="sous">Les héros du tchat de <b id="chaine">ganollum</b> : Bataille, Arène et Donjon</div>
+    <a class="live" id="lienLive" href="https://www.twitch.tv/ganollum" target="_blank" rel="noopener">🎮 Rejoindre la Taverne en live</a>
+    <div class="maj" id="maj">Chargement…</div>
+  </header>
+
+  <div class="recherche"><input id="recherche" type="search" placeholder="🔎 Trouve ton héros (ton pseudo Twitch)" autocomplete="off"></div>
+
+  <nav>
+    <button data-onglet="heros" class="actif">🏅 Meilleurs héros</button>
+    <button data-onglet="classes">⚔ Par classe</button>
+    <button data-onglet="honneur">🏆 Tableau d'honneur</button>
+  </nav>
+
+  <main class="carte" id="contenu"><div class="vide">Chargement du classement…</div></main>
+
+  <footer>
+    Niveaux 1 à 100 par classe · Tenues : Bronze (25), Argent (50), Or (75), Légendaire (100)<br>
+    Tape <b>!profil jeu</b> à la Taverne pendant le live pour voir ta fiche à l'écran.
+  </footer>
+</div>
+
+<div class="fond-fiche" id="fondFiche"><div class="carte fiche" id="fiche"></div></div>
+
+<script>
+const CLASSES = {
+  tank: ['🛡', 'Tank'], guerrier: ['⚔', 'Guerrier'], voleur: ['🗡', 'Voleur'], mage: ['🔥', 'Mage'],
+  soin: ['✨', 'Soigneur'], necro: ['💀', 'Nécromancien'], druide: ['🌿', 'Druide'], barde: ['🎵', 'Barde'], chasseur: ['🏹', 'Chasseur']
+};
+const XP_NIVEAU = 30, NIV_MAX = 100;
+const niveau = xp => Math.min(NIV_MAX, 1 + Math.floor((xp || 0) / XP_NIVEAU));
+const PALIERS = [[100, 'Légendaire', 't4'], [75, 'Or', 't3'], [50, 'Argent', 't2'], [25, 'Bronze', 't1'], [1, 'Débutant', 't0']];
+const palier = n => PALIERS.find(p => n >= p[0]);
+const echap = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const sansAccent = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+let D = null, onglet = 'heros', classeChoisie = 'tank';
+
+function infos(h) {
+  const niveaux = Object.entries(h.classes || {}).map(([c, xp]) => [c, niveau(xp), xp]).sort((a, b) => b[2] - a[2]);
+  const meilleur = niveaux[0] || null;
+  const total = niveaux.reduce((s, x) => s + x[1], 0);
+  return { niveaux, meilleur, total };
+}
+
+function lignePalier(n) { const p = palier(n); return '<span class="pastille ' + p[2] + '">Niv ' + n + ' · ' + p[1] + '</span>'; }
+const medaille = i => i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+
+function afficher() {
+  const C = document.getElementById('contenu');
+  if (!D) return;
+  const filtre = sansAccent(document.getElementById('recherche').value.trim());
+  const garde = h => !filtre || sansAccent(h.nom).includes(filtre) || sansAccent(h.login || '').includes(filtre);
+  let heros = D.heros;   // le rang reste celui du classement complet, même quand on cherche un pseudo
+
+  if (onglet === 'heros') {
+    const classes = heros.filter(h => infos(h).meilleur)
+      .sort((a, b) => infos(b).total - infos(a).total || (infos(b).meilleur[2] - infos(a).meilleur[2]))
+      .map((h, i) => [h, i]).filter(([h]) => garde(h));
+    if (!classes.length) return (C.innerHTML = '<div class="vide">Aucun héros trouvé.</div>');
+    C.innerHTML = '<table><tr><th></th><th>Héros</th><th>Meilleure classe</th><th>Niveaux cumulés</th></tr>' +
+      classes.slice(0, 200).map(([h, i]) => {
+        const I = infos(h), [c, n] = I.meilleur;
+        return '<tr class="cliquable" data-login="' + echap(h.login) + '"><td class="rang r' + (i + 1) + '">' + medaille(i) + '</td>' +
+          '<td class="nom">' + echap(h.nom) + '<div class="classes-mini">' + I.niveaux.slice(0, 5).map(x => CLASSES[x[0]] ? CLASSES[x[0]][0] + ' ' + x[1] : '').join(' · ') + '</div></td>' +
+          '<td>' + (CLASSES[c] ? CLASSES[c].join(' ') : c) + '<br>' + lignePalier(n) + '</td><td><b>' + I.total + '</b></td></tr>';
+      }).join('') + '</table>';
+  } else if (onglet === 'classes') {
+    const liste = heros.filter(h => h.classes && h.classes[classeChoisie] > 0)
+      .sort((a, b) => b.classes[classeChoisie] - a.classes[classeChoisie])
+      .map((h, i) => [h, i]).filter(([h]) => garde(h));
+    C.innerHTML = '<div class="select-classe">' + Object.entries(CLASSES).map(([k, v]) =>
+        '<button data-classe="' + k + '" class="' + (k === classeChoisie ? 'actif' : '') + '">' + v[0] + ' ' + v[1] + '</button>').join('') + '</div>' +
+      (liste.length ? '<table><tr><th></th><th>Héros</th><th>Niveau</th><th>XP</th></tr>' + liste.slice(0, 100).map(([h, i]) => {
+        const xp = h.classes[classeChoisie];
+        return '<tr class="cliquable" data-login="' + echap(h.login) + '"><td class="rang r' + (i + 1) + '">' + medaille(i) + '</td><td class="nom">' + echap(h.nom) + '</td><td>' + lignePalier(niveau(xp)) + '</td><td>' + xp + '</td></tr>';
+      }).join('') + '</table>' : '<div class="vide">Personne n\'a encore joué cette classe.</div>');
+  } else {
+    const cat = (titre, cle, unite) => {
+      const l = heros.filter(h => h[cle] > 0).sort((a, b) => b[cle] - a[cle]).map((h, i) => [h, i]).filter(([h]) => garde(h)).slice(0, 10);
+      return '<div><h3>' + titre + '</h3><ol>' + (l.length ? l.map(([h, i]) =>
+        '<li><span>' + medaille(i) + ' <b data-login="' + echap(h.login) + '">' + echap(h.nom) + '</b></span><span>' + h[cle] + ' ' + unite + '</span></li>').join('')
+        : '<li><span class="vide" style="padding:6px">Personne pour l\'instant</span></li>') + '</ol></div>';
+    };
+    C.innerHTML = '<div class="honneur">' + cat('⚔ Rois de la Bataille', 'bataille', 'vict.') +
+      cat('💀 Tueurs de boss (Donjon)', 'donjon', 'boss') + cat('🏟 Champions de l\'Arène', 'arene', 'vict.') + '</div>';
+  }
+}
+
+function ouvrirFiche(login) {
+  const h = D.heros.find(x => x.login === login);
+  if (!h) return;
+  const I = infos(h);
+  const F = document.getElementById('fiche');
+  const badges = I.niveaux.filter(x => x[1] >= NIV_MAX).map(x => (CLASSES[x[0]] || ['🏅'])[0]).join(' ');
+  F.innerHTML = '<button class="fermer" aria-label="Fermer">×</button>' +
+    '<h2>' + echap(h.nom) + '</h2>' +
+    '<div class="resume">' + (I.meilleur ? 'Meilleure classe : ' + (CLASSES[I.meilleur[0]] || [I.meilleur[0]]).join(' ') + ' · ' + I.total + ' niveaux cumulés' : 'Pas encore de classe jouée') + '</div>' +
+    '<div class="victoires"><span>⚔ Bataille : <b>' + (h.bataille || 0) + '</b> victoire(s)</span><span>💀 Donjon : <b>' + (h.donjon || 0) + '</b> boss vaincu(s)</span><span>🏟 Arène : <b>' + (h.arene || 0) + '</b> victoire(s)</span></div>' +
+    '<div class="grille">' + Object.entries(CLASSES).map(([k, v]) => {
+      const xp = (h.classes || {})[k] || 0, n = niveau(xp), reste = xp % XP_NIVEAU;
+      return '<div class="classe ' + (xp ? '' : 'jamais') + '"><div class="tete"><span>' + v[0] + ' ' + v[1] + '</span><span class="niv">' + n + '</span></div>' +
+        '<div class="barre"><i style="width:' + (n >= NIV_MAX ? 100 : Math.round(reste / XP_NIVEAU * 100)) + '%"></i></div>' +
+        (xp ? lignePalier(n) + ' <small>' + (n >= NIV_MAX ? 'niveau max !' : (XP_NIVEAU - reste) + ' XP avant le niveau ' + (n + 1)) + '</small>' : '<small>Jamais jouée</small>') + '</div>';
+    }).join('') + '</div>' +
+    (badges ? '<div class="badges">Médailles niveau 100 : ' + badges + '</div>' : '');
+  document.getElementById('fondFiche').classList.add('ouvert');
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('nav button');
+  if (b) { onglet = b.dataset.onglet; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('actif', x === b)); return afficher(); }
+  const c = e.target.closest('[data-classe]');
+  if (c) { classeChoisie = c.dataset.classe; return afficher(); }
+  const l = e.target.closest('[data-login]');
+  if (l) return ouvrirFiche(l.dataset.login);
+  if (e.target.id === 'fondFiche' || e.target.closest('.fermer')) document.getElementById('fondFiche').classList.remove('ouvert');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('fondFiche').classList.remove('ouvert'); });
+document.getElementById('recherche').addEventListener('input', afficher);
+
+async function charger() {
+  try {
+    const r = await fetch('classement.json?t=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) throw new Error(r.status);
+    D = await r.json();
+    if (D.chaine) {
+      document.getElementById('chaine').textContent = D.chaine;
+      document.getElementById('lienLive').href = 'https://www.twitch.tv/' + encodeURIComponent(D.chaine);
+    }
+    const d = new Date(D.maj);
+    document.getElementById('maj').textContent = D.heros.length + ' héros · mis à jour le ' +
+      d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    afficher();
+  } catch (e) {
+    document.getElementById('maj').textContent = 'Le classement arrive bientôt : il se remplit pendant les lives !';
+    document.getElementById('contenu').innerHTML = '<div class="vide">Pas encore de héros… viens jouer en live pour être le premier !</div>';
+  }
+}
+charger();
+setInterval(charger, 120000);   // se met à jour toute seule toutes les 2 minutes
+</script>
+</body>
+</html>
