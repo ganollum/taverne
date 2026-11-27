@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- taverne-page v3 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
+<!-- taverne-page v4 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
 <title>Taverne des Héros · Classement</title>
 <meta name="description" content="Le classement des héros de la Taverne des Héros, les jeux du tchat de ganollum sur Twitch.">
 <style>
@@ -23,26 +23,16 @@
   a { color: var(--or); }
   .page { max-width: 1100px; margin: 0 auto; padding: 24px 16px 60px; }
   header { text-align: center; padding: 18px 0 8px; }
-  /* ⚡ derniers exploits : petit cadre qui les fait défiler un par un (en haut à droite sur grand écran) */
-  .exploits { background: var(--carte); border: 2px solid var(--bord); border-radius: 16px; padding: 10px 14px 12px;
-              box-shadow: 0 8px 24px rgba(0,0,0,0.45); max-width: 560px; margin: 16px auto 0; }
-  .exploits .titre { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-  .exploits h2 { margin: 0; font-size: 15px; color: var(--or); letter-spacing: 0.5px; }
-  .exploits .points { display: flex; gap: 4px; }
-  .exploits .points i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); }
-  .exploits .points i.on { background: var(--or); }
-  .exploits .courant { min-height: 58px; margin-top: 6px; font-size: 14px; line-height: 1.35; transition: opacity 0.35s; }
-  .exploits .courant.cache { opacity: 0; }
-  .exploits b { color: #fff; }
-  .exploits .quand { display: block; color: var(--doux); font-size: 12px; margin-top: 3px; }
-  .exploits button.tout { margin-top: 6px; background: none; border: 0; padding: 0; color: var(--or); font-size: 13px; cursor: pointer; }
-  .exploits ul { list-style: none; margin: 8px 0 0; padding: 0; max-height: 320px; overflow-y: auto; display: none; }
-  .exploits.ouvert ul { display: block; }
-  .exploits.ouvert .courant, .exploits.ouvert .points { display: none; }
-  .exploits li { padding: 7px 0; border-top: 1px solid rgba(255,255,255,0.07); font-size: 14px; line-height: 1.35; }
-  @media (min-width: 1780px) {   /* assez de place sur les côtés : il se range en haut à droite sans rien chevaucher */
-    .exploits { position: absolute; top: 22px; right: 22px; width: 320px; margin: 0; z-index: 5; }
-  }
+  /* ⚡ derniers exploits : une seule ligne qui défile sous le titre */
+  .bandeau { max-width: 760px; margin: 14px auto 0; padding: 7px 16px; border-radius: 999px;
+             background: rgba(0,0,0,0.32); border: 1px solid rgba(255,210,63,0.25);
+             font-size: 14px; color: var(--doux); text-align: center;
+             white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.35s; }
+  .bandeau.cache { opacity: 0; }
+  .bandeau .eclair { color: var(--or); margin-right: 6px; }
+  .bandeau .txt { color: var(--texte); }
+  .bandeau b { color: #fff; }
+  .bandeau .quand { margin-left: 8px; font-size: 12px; }
   h1 { margin: 0; font-size: clamp(32px, 6vw, 56px); color: var(--or); letter-spacing: 1px;
        text-shadow: 0 3px 0 #6b3d12, 0 0 24px rgba(255, 190, 60, 0.35); }
   .sous { color: var(--doux); margin: 6px 0 14px; }
@@ -114,12 +104,7 @@
     <a class="live" id="lienLive" href="https://www.twitch.tv/ganollum" target="_blank" rel="noopener">🎮 Rejoindre la Taverne en live</a>
     <div class="maj" id="maj">Chargement…</div>
   </header>
-  <aside class="exploits" id="cadreExploits" hidden>
-    <div class="titre"><h2>⚡ DERNIERS EXPLOITS</h2><div class="points" id="pointsExploits"></div></div>
-    <div class="courant" id="exploitCourant"></div>
-    <ul id="listeExploits"></ul>
-    <button class="tout" id="toutVoir">Tout voir ▾</button>
-  </aside>
+  <div class="bandeau" id="bandeau" hidden></div>
 
   <div class="recherche"><input id="recherche" type="search" placeholder="🔎 Trouve ton héros (ton pseudo Twitch)" autocomplete="off"></div>
 
@@ -217,27 +202,22 @@ function quand(t) {
   return 'le ' + d.toLocaleDateString('fr-FR') + ' à ' + heure;
 }
 let exploitIdx = 0;
-const htmlExploit = e => echap(e.txt).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') + '<span class="quand">' + quand(e.t) + '</span>';
 function afficherExploits() {
-  const L = ((D && D.exploits) || []).slice(0, 15), cadre = document.getElementById('cadreExploits');
-  cadre.hidden = !L.length;   // pas d'exploit : pas de cadre
+  const L = ((D && D.exploits) || []).slice(0, 10), B = document.getElementById('bandeau');
+  B.hidden = !L.length;   // pas d'exploit : pas de bandeau
   if (!L.length) return;
   exploitIdx %= L.length;
-  document.getElementById('exploitCourant').innerHTML = htmlExploit(L[exploitIdx]);
-  document.getElementById('pointsExploits').innerHTML = L.slice(0, 8).map((_, i) => '<i class="' + (i === exploitIdx ? 'on' : '') + '"></i>').join('');
-  document.getElementById('listeExploits').innerHTML = L.map(e => '<li>' + htmlExploit(e) + '</li>').join('');
+  const e = L[exploitIdx];
+  B.title = e.txt.replace(/\*\*/g, '');   // texte complet au survol s'il est coupé
+  B.innerHTML = '<span class="eclair">⚡</span><span class="txt">' + echap(e.txt).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') +
+    '</span><span class="quand">· ' + quand(e.t) + '</span>';
 }
 setInterval(() => {   // un exploit toutes les 6 s, avec un petit fondu
-  const L = (D && D.exploits) || [], c = document.getElementById('exploitCourant');
-  if (L.length < 2 || document.getElementById('cadreExploits').classList.contains('ouvert')) return;
-  c.classList.add('cache');
-  setTimeout(() => { exploitIdx = (exploitIdx + 1) % Math.min(8, L.length); afficherExploits(); c.classList.remove('cache'); }, 350);
+  const L = (D && D.exploits) || [], B = document.getElementById('bandeau');
+  if (L.length < 2) return;
+  B.classList.add('cache');
+  setTimeout(() => { exploitIdx = (exploitIdx + 1) % Math.min(10, L.length); afficherExploits(); B.classList.remove('cache'); }, 350);
 }, 6000);
-document.getElementById('toutVoir').addEventListener('click', () => {
-  const cadre = document.getElementById('cadreExploits');
-  cadre.classList.toggle('ouvert');
-  document.getElementById('toutVoir').textContent = cadre.classList.contains('ouvert') ? 'Réduire ▴' : 'Tout voir ▾';
-});
 
 function ouvrirFiche(login) {
   const h = D.heros.find(x => x.login === login);
