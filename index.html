@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- taverne-page v6 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
+<!-- taverne-page v7 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
 <title>Taverne des Héros · Classement</title>
 <meta name="description" content="Le classement des héros de la Taverne des Héros, les jeux du tchat de ganollum sur Twitch.">
 <style>
@@ -104,6 +104,18 @@
   .leader span { color: var(--or); font-size: 14px; }
   td.chiffre { text-align: center; color: var(--doux); }
   td.chiffre.fort { color: var(--or); font-weight: 800; font-size: 17px; }
+  .selecteur { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .selecteur button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--bord); background: var(--bois2);
+                      color: var(--or); font-size: 18px; cursor: pointer; }
+  .selecteur button:disabled { opacity: 0.25; cursor: default; }
+  .terminee { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; font-size: 12px;
+              background: rgba(255,255,255,0.1); color: var(--doux); vertical-align: middle; }
+  .palmares .mois { cursor: pointer; }
+  .palmares .mois:hover { background: rgba(255, 210, 63, 0.06); }
+  .histo { margin-top: 16px; }
+  .histo h3 { margin: 0 0 6px; color: var(--or); font-size: 17px; }
+  .histo div { display: flex; justify-content: space-between; padding: 5px 2px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 14px; }
+  .histo span { color: var(--doux); }
   .palmares { margin-top: 22px; }
   .palmares h3 { color: var(--or); margin: 0 0 8px; }
   .palmares .mois { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; padding: 9px 4px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 14px; }
@@ -155,7 +167,9 @@ const palier = n => PALIERS.find(p => n >= p[0]);
 const echap = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const sansAccent = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-let D = null, onglet = 'saison', classeChoisie = 'tank';
+let D = null, onglet = 'saison', classeChoisie = 'tank', saisonVue = 0;   // 0 = saison en cours, 1 = le mois d'avant…
+// toutes les saisons, de la plus récente à la plus ancienne : [en cours, passées…]
+const toutesSaisons = () => D && D.saison ? [Object.assign({ enCours: true }, D.saison), ...(D.saisons || [])] : (D && D.saisons) || [];
 // « novembre 2026 », et « de novembre » / « d'octobre »
 const nomMois = m => { const [a, mm] = m.split('-').map(Number); return new Date(a, mm - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); };
 const deMois = m => { const n = nomMois(m); return (/^[aeiouyéè]/i.test(n) ? 'd\'' : 'de ') + n; };
@@ -179,32 +193,38 @@ function afficher() {
   let heros = D.heros;   // le rang reste celui du classement complet, même quand on cherche un pseudo
 
   if (onglet === 'saison') {
-    const S = D.saison;
-    if (!S) return (C.innerHTML = '<div class="vide">La première saison commence bientôt !</div>');
+    const T = toutesSaisons();
+    if (!T.length) return (C.innerHTML = '<div class="vide">La première saison commence bientôt !</div>');
+    saisonVue = Math.max(0, Math.min(saisonVue, T.length - 1));
+    const S = T[saisonVue];
     const [a, m] = S.mois.split('-').map(Number);
     const fin = new Date(a, m, 1), jours = Math.max(0, Math.ceil((fin - Date.now()) / 86400000));
     const debutTard = new Date(S.debut).getDate() > 1 && new Date(S.debut).getMonth() === m - 1;
-    const G = S.heros || [];
+    const G = S.heros || (S.xp || []).map(([nom, xp]) => ({ login: nom.toLowerCase(), nom, xp, bataille: 0, donjon: 0, arene: 0, points: 0 }));
     const meneur = (cle, titre, unite) => {
       const x = G.filter(g => g[cle] > 0).sort((p, q) => q[cle] - p[cle])[0];
-      return '<div class="leader"><small>' + titre + '</small>' + (x ? '<b data-login="' + echap(x.login) + '">' + echap(x.nom) + '</b><span>' + x[cle].toLocaleString('fr-FR') + ' ' + unite + '</span>' : '<b>—</b><span>personne encore</span>') + '</div>';
+      return '<div class="leader"><small>' + titre + '</small>' + (x ? '<b data-login="' + echap(x.login) + '">' + echap(x.nom) + '</b><span>' + x[cle].toLocaleString('fr-FR') + ' ' + unite + '</span>' : '<b>—</b><span>' + (S.enCours ? 'personne encore' : 'personne') + '</span>') + '</div>';
     };
     const tri = G.filter(g => g.xp > 0).sort((p, q) => q.xp - p.xp).map((g, i) => [g, i]).filter(([g]) => garde(g));
-    let html = '<div class="saison-tete"><h2>🗓 Saison ' + deMois(S.mois) + '</h2><div>' +
-      (jours > 1 ? 'Se termine dans ' + jours + ' jours' : jours === 1 ? 'Dernier jour de la saison !' : 'Saison terminée') +
-      (debutTard ? ' · comptée depuis le ' + new Date(S.debut).toLocaleDateString('fr-FR') : '') +
-      ' · tout ce que tu gagnes ce mois-ci compte !</div></div>' +
+    let html = '<div class="saison-tete"><div class="selecteur">' +
+        '<button data-saison="' + (saisonVue + 1) + '" ' + (saisonVue >= T.length - 1 ? 'disabled' : '') + ' aria-label="Mois précédent">◀</button>' +
+        '<h2>🗓 Saison ' + deMois(S.mois) + (S.enCours ? '' : '<span class="terminee">terminée</span>') + '</h2>' +
+        '<button data-saison="' + (saisonVue - 1) + '" ' + (saisonVue <= 0 ? 'disabled' : '') + ' aria-label="Mois suivant">▶</button></div><div>' +
+      (S.enCours ? (jours > 1 ? 'Se termine dans ' + jours + ' jours' : jours === 1 ? 'Dernier jour de la saison !' : 'Saison terminée') +
+        (debutTard ? ' · comptée depuis le ' + new Date(S.debut).toLocaleDateString('fr-FR') : '') + ' · tout ce que tu gagnes ce mois-ci compte !'
+        : 'Classement final' + (debutTard ? ' (compté depuis le ' + new Date(S.debut).toLocaleDateString('fr-FR') + ')' : '') + ' · ◀ ▶ pour voir les autres mois') +
+      '</div></div>' +
       '<div class="leaders">' + meneur('xp', '⭐ Plus d\'XP gagnée', 'XP') + meneur('bataille', '⚔ Roi de la Bataille', 'vict.') +
       meneur('donjon', '💀 Tueur de boss', 'boss') + meneur('arene', '🏟 Champion de l\'Arène', 'vict.') + meneur('points', '🎁 Plus généreux', 'pts') + '</div>';
     html += tri.length ? '<table><tr><th></th><th>Héros</th><th style="text-align:center">XP gagnée</th><th class="cache-mobile" style="text-align:center">⚔</th><th class="cache-mobile" style="text-align:center">💀</th><th class="cache-mobile" style="text-align:center">🏟</th></tr>' +
       tri.slice(0, 100).map(([g, i]) => '<tr class="cliquable" data-login="' + echap(g.login) + '"><td class="rang r' + (i + 1) + '">' + medaille(i) + '</td><td class="nom">' + echap(g.nom) + '</td>' +
         '<td class="chiffre fort">' + g.xp.toLocaleString('fr-FR') + '</td><td class="chiffre cache-mobile">' + (g.bataille || '·') + '</td><td class="chiffre cache-mobile">' + (g.donjon || '·') + '</td><td class="chiffre cache-mobile">' + (g.arene || '·') + '</td></tr>').join('') + '</table>'
-      : '<div class="vide">' + (filtre ? 'Aucun héros trouvé.' : 'Personne n\'a encore gagné d\'XP ce mois-ci… à toi d\'ouvrir la saison !') + '</div>';
+      : '<div class="vide">' + (filtre ? 'Aucun héros trouvé.' : S.enCours ? 'Personne n\'a encore gagné d\'XP ce mois-ci… à toi d\'ouvrir la saison !' : 'Personne n\'a gagné d\'XP ce mois-là.') + '</div>';
     const P = D.saisons || [];
-    if (P.length) html += '<div class="palmares"><h3>📜 Palmarès des saisons</h3>' + P.map(p => {
+    if (P.length) html += '<div class="palmares"><h3>📜 Palmarès des saisons</h3>' + P.map((p, k) => {
       const n = majuscule(nomMois(p.mois));
       const c = (l, ico) => l && l[0] ? '<span>' + ico + ' <b>' + echap(l[0][0]) + '</b></span>' : '';
-      return '<div class="mois"><strong>' + n + '</strong>' +
+      return '<div class="mois" data-saison="' + (k + 1) + '" title="Voir le classement complet"><strong>' + n + '</strong>' +
         (p.xp && p.xp.length ? p.xp.map((x, i) => '<span>' + medaille(i) + ' <b>' + echap(x[0]) + '</b> (' + x[1].toLocaleString('fr-FR') + ' XP)</span>').join('') : '<span>pas de champion</span>') +
         c(p.bataille, '⚔') + c(p.donjon, '💀') + c(p.arene, '🏟') + c(p.points, '🎁') + '</div>';
     }).join('') + '</div>';
@@ -273,6 +293,18 @@ setInterval(() => {   // un exploit toutes les 6 s, avec un petit fondu
   setTimeout(() => { exploitIdx = (exploitIdx + 1) % Math.min(10, L.length); afficherExploits(); B.classList.remove('cache'); }, 350);
 }, 6000);
 
+// 📅 la place du héros dans chaque saison (en cours + passées)
+function historiqueSaisons(login) {
+  const lignes = toutesSaisons().map(S => {
+    const G = (S.heros || []).filter(g => g.xp > 0).sort((a, b) => b.xp - a.xp);
+    const i = G.findIndex(g => g.login === login);
+    if (i < 0) return '';
+    return '<div><b>' + majuscule(nomMois(S.mois)) + (S.enCours ? ' <span>(en cours)</span>' : '') + '</b><span>' +
+      (i < 3 ? ['🥇', '🥈', '🥉'][i] + ' ' : '') + (i + 1) + (i ? 'e' : 'er') + ' sur ' + G.length + ' · ' + G[i].xp.toLocaleString('fr-FR') + ' XP</span></div>';
+  }).filter(Boolean);
+  return lignes.length ? '<div class="histo"><h3>📅 Historique des saisons</h3>' + lignes.join('') + '</div>' : '';
+}
+
 function ouvrirFiche(login) {
   const h = D.heros.find(x => x.login === login);
   if (!h) return;
@@ -289,13 +321,15 @@ function ouvrirFiche(login) {
         '<div class="barre"><i style="width:' + (n >= NIV_MAX ? 100 : Math.round(reste / XP_NIVEAU * 100)) + '%"></i></div>' +
         (xp ? lignePalier(n) + ' <small>' + (n >= NIV_MAX ? 'niveau max !' : (XP_NIVEAU - reste) + ' XP avant le niveau ' + (n + 1)) + '</small>' : '<small>Jamais jouée</small>') + '</div>';
     }).join('') + '</div>' +
-    (badges ? '<div class="badges">Médailles niveau 100 : ' + badges + '</div>' : '');
+    (badges ? '<div class="badges">Médailles niveau 100 : ' + badges + '</div>' : '') + historiqueSaisons(h.login);
   document.getElementById('fondFiche').classList.add('ouvert');
 }
 
 document.addEventListener('click', e => {
   const b = e.target.closest('nav button');
   if (b) { onglet = b.dataset.onglet; document.querySelectorAll('nav button').forEach(x => x.classList.toggle('actif', x === b)); return afficher(); }
+  const sv = e.target.closest('[data-saison]');
+  if (sv && !sv.disabled) { saisonVue = +sv.dataset.saison; afficher(); if (sv.classList.contains('mois')) window.scrollTo({ top: document.querySelector('nav').offsetTop - 10, behavior: 'smooth' }); return; }
   const c = e.target.closest('[data-classe]');
   if (c) { classeChoisie = c.dataset.classe; return afficher(); }
   const l = e.target.closest('[data-login]');
