@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- taverne-page v4 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
+<!-- taverne-page v5 : page installée et mise à jour automatiquement par le jeu, ne pas modifier à la main -->
 <title>Taverne des Héros · Classement</title>
 <meta name="description" content="Le classement des héros de la Taverne des Héros, les jeux du tchat de ganollum sur Twitch.">
 <style>
@@ -93,6 +93,24 @@
   .barre i { display: block; height: 100%; background: linear-gradient(90deg, #ffb300, #ffd23f); }
   .classe small { color: var(--doux); }
   .badges { margin-top: 14px; font-size: 22px; }
+  /* 🗓 saison */
+  .saison-tete { text-align: center; margin-bottom: 14px; }
+  .saison-tete h2 { margin: 0; color: var(--or); font-size: 26px; }
+  .saison-tete div { color: var(--doux); font-size: 14px; margin-top: 2px; }
+  .leaders { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .leader { background: rgba(0,0,0,0.3); border: 1px solid var(--bord); border-radius: 14px; padding: 10px 12px; text-align: center; }
+  .leader small { display: block; color: var(--doux); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .leader b { display: block; font-size: 17px; margin-top: 3px; cursor: pointer; }
+  .leader span { color: var(--or); font-size: 14px; }
+  td.chiffre { text-align: center; color: var(--doux); }
+  td.chiffre.fort { color: var(--or); font-weight: 800; font-size: 17px; }
+  .palmares { margin-top: 22px; }
+  .palmares h3 { color: var(--or); margin: 0 0 8px; }
+  .palmares .mois { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; padding: 9px 4px; border-top: 1px solid rgba(255,255,255,0.07); font-size: 14px; }
+  .palmares .mois strong { color: var(--texte); min-width: 130px; }
+  .palmares .mois span { color: var(--doux); }
+  .palmares .mois span b { color: var(--texte); }
+  @media (max-width: 640px) { .cache-mobile { display: none; } }
   footer { text-align: center; color: var(--doux); font-size: 13px; margin-top: 30px; }
 </style>
 </head>
@@ -109,7 +127,8 @@
   <div class="recherche"><input id="recherche" type="search" placeholder="🔎 Trouve ton héros (ton pseudo Twitch)" autocomplete="off"></div>
 
   <nav>
-    <button data-onglet="heros" class="actif">🏅 Meilleurs héros</button>
+    <button data-onglet="saison" class="actif">🗓 Saison du mois</button>
+    <button data-onglet="heros">🏅 Meilleurs héros</button>
     <button data-onglet="classes">⚔ Par classe</button>
     <button data-onglet="honneur">🏆 Tableau d'honneur</button>
   </nav>
@@ -136,7 +155,11 @@ const palier = n => PALIERS.find(p => n >= p[0]);
 const echap = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const sansAccent = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-let D = null, onglet = 'heros', classeChoisie = 'tank';
+let D = null, onglet = 'saison', classeChoisie = 'tank';
+// « novembre 2026 », et « de novembre » / « d'octobre »
+const nomMois = m => { const [a, mm] = m.split('-').map(Number); return new Date(a, mm - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); };
+const deMois = m => { const n = nomMois(m); return (/^[aeiouyéè]/i.test(n) ? 'd\'' : 'de ') + n; };
+const majuscule = t => t.charAt(0).toUpperCase() + t.slice(1);
 
 function infos(h) {
   const niveaux = Object.entries(h.classes || {}).map(([c, xp]) => [c, niveau(xp), xp]).sort((a, b) => b[2] - a[2]);
@@ -155,7 +178,38 @@ function afficher() {
   const garde = h => !filtre || sansAccent(h.nom).includes(filtre) || sansAccent(h.login || '').includes(filtre);
   let heros = D.heros;   // le rang reste celui du classement complet, même quand on cherche un pseudo
 
-  if (onglet === 'heros') {
+  if (onglet === 'saison') {
+    const S = D.saison;
+    if (!S) return (C.innerHTML = '<div class="vide">La première saison commence bientôt !</div>');
+    const [a, m] = S.mois.split('-').map(Number);
+    const fin = new Date(a, m, 1), jours = Math.max(0, Math.ceil((fin - Date.now()) / 86400000));
+    const debutTard = new Date(S.debut).getDate() > 1 && new Date(S.debut).getMonth() === m - 1;
+    const G = S.heros || [];
+    const meneur = (cle, titre, unite) => {
+      const x = G.filter(g => g[cle] > 0).sort((p, q) => q[cle] - p[cle])[0];
+      return '<div class="leader"><small>' + titre + '</small>' + (x ? '<b data-login="' + echap(x.login) + '">' + echap(x.nom) + '</b><span>' + x[cle].toLocaleString('fr-FR') + ' ' + unite + '</span>' : '<b>—</b><span>personne encore</span>') + '</div>';
+    };
+    const tri = G.filter(g => g.xp > 0).sort((p, q) => q.xp - p.xp).map((g, i) => [g, i]).filter(([g]) => garde(g));
+    let html = '<div class="saison-tete"><h2>🗓 Saison ' + deMois(S.mois) + '</h2><div>' +
+      (jours > 1 ? 'Se termine dans ' + jours + ' jours' : jours === 1 ? 'Dernier jour de la saison !' : 'Saison terminée') +
+      (debutTard ? ' · comptée depuis le ' + new Date(S.debut).toLocaleDateString('fr-FR') : '') +
+      ' · tout ce que tu gagnes ce mois-ci compte !</div></div>' +
+      '<div class="leaders">' + meneur('xp', '⭐ Plus d\'XP gagnée', 'XP') + meneur('bataille', '⚔ Roi de la Bataille', 'vict.') +
+      meneur('donjon', '💀 Tueur de boss', 'boss') + meneur('arene', '🏟 Champion de l\'Arène', 'vict.') + meneur('points', '🎁 Plus généreux', 'pts') + '</div>';
+    html += tri.length ? '<table><tr><th></th><th>Héros</th><th style="text-align:center">XP gagnée</th><th class="cache-mobile" style="text-align:center">⚔</th><th class="cache-mobile" style="text-align:center">💀</th><th class="cache-mobile" style="text-align:center">🏟</th></tr>' +
+      tri.slice(0, 100).map(([g, i]) => '<tr class="cliquable" data-login="' + echap(g.login) + '"><td class="rang r' + (i + 1) + '">' + medaille(i) + '</td><td class="nom">' + echap(g.nom) + '</td>' +
+        '<td class="chiffre fort">' + g.xp.toLocaleString('fr-FR') + '</td><td class="chiffre cache-mobile">' + (g.bataille || '·') + '</td><td class="chiffre cache-mobile">' + (g.donjon || '·') + '</td><td class="chiffre cache-mobile">' + (g.arene || '·') + '</td></tr>').join('') + '</table>'
+      : '<div class="vide">' + (filtre ? 'Aucun héros trouvé.' : 'Personne n\'a encore gagné d\'XP ce mois-ci… à toi d\'ouvrir la saison !') + '</div>';
+    const P = D.saisons || [];
+    if (P.length) html += '<div class="palmares"><h3>📜 Palmarès des saisons</h3>' + P.map(p => {
+      const n = majuscule(nomMois(p.mois));
+      const c = (l, ico) => l && l[0] ? '<span>' + ico + ' <b>' + echap(l[0][0]) + '</b></span>' : '';
+      return '<div class="mois"><strong>' + n + '</strong>' +
+        (p.xp && p.xp.length ? p.xp.map((x, i) => '<span>' + medaille(i) + ' <b>' + echap(x[0]) + '</b> (' + x[1].toLocaleString('fr-FR') + ' XP)</span>').join('') : '<span>pas de champion</span>') +
+        c(p.bataille, '⚔') + c(p.donjon, '💀') + c(p.arene, '🏟') + c(p.points, '🎁') + '</div>';
+    }).join('') + '</div>';
+    C.innerHTML = html;
+  } else if (onglet === 'heros') {
     const classes = heros.filter(h => infos(h).meilleur)
       .sort((a, b) => infos(b).total - infos(a).total || (infos(b).meilleur[2] - infos(a).meilleur[2]))
       .map((h, i) => [h, i]).filter(([h]) => garde(h));
